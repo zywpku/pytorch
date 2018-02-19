@@ -142,6 +142,113 @@ std::array<bool, N> as_bool_array(const std::vector<int64_t>& vec) {
   return res;
 }
 
+template<typename T>
+T tensor_as(const at::Tensor& t) {
+  throw std::runtime_error("Invalid tensor_as overload");
+}
+
+template<>
+int64_t tensor_as(const at::Tensor& t) {
+  if (t.numel() > 1)
+    throw std::runtime_error("Trying to convert a tensor with more than 1 element into a scalar");
+  // TODO: transfer to CPU
+  switch (t.type().scalarType()) {
+    case at::ScalarType::Long:
+      return *t.data<int64_t>();
+    case at::ScalarType::Int:
+      return *t.data<int32_t>();
+    case at::ScalarType::Short:
+      return *t.data<int16_t>();
+    case at::ScalarType::Char:
+      return *t.data<int8_t>();
+    case at::ScalarType::Byte:
+      return *t.data<uint8_t>();
+    default:
+      throw std::runtime_error("Trying to convert a floating point tensor "
+                               "into an integral scalar value");
+  }
+}
+
+template<>
+bool tensor_as(const at::Tensor& t) {
+  if (t.numel() > 1)
+    throw std::runtime_error("Trying to convert a tensor with more than 1 element into a scalar");
+  // TODO: transfer to CPU
+  switch (t.type().scalarType()) {
+    case at::ScalarType::Long:
+      return *t.data<int64_t>();
+    case at::ScalarType::Int:
+      return *t.data<int32_t>();
+    case at::ScalarType::Short:
+      return *t.data<int16_t>();
+    case at::ScalarType::Char:
+      return *t.data<int8_t>();
+    case at::ScalarType::Byte:
+      return *t.data<uint8_t>();
+    case at::ScalarType::Float:
+      return *t.data<float>();
+    case at::ScalarType::Double:
+      return *t.data<double>();
+    case at::ScalarType::Half:
+      throw std::runtime_error("Taking bool values of half scalars not implemented");
+    case at::ScalarType::Undefined:
+      throw std::runtime_error("Taking bool value of an undefined tensor");
+    case at::ScalarType::NumOptions:
+      throw std::runtime_error("Got NumOptions as scalar type. Something went terribly wrong.");
+  }
+}
+
+template<>
+double tensor_as(const at::Tensor& t) {
+  if (t.numel() > 1)
+    throw std::runtime_error("Trying to convert a tensor with more than 1 element into a scalar");
+  // TODO: transfer to CPU
+  switch (t.type().scalarType()) {
+    case at::ScalarType::Long:
+      return *t.data<int64_t>();
+    case at::ScalarType::Int:
+      return *t.data<int32_t>();
+    case at::ScalarType::Short:
+      return *t.data<int16_t>();
+    case at::ScalarType::Char:
+      return *t.data<int8_t>();
+    case at::ScalarType::Byte:
+      return *t.data<uint8_t>();
+    case at::ScalarType::Float:
+      return *t.data<float>();
+    case at::ScalarType::Double:
+      return *t.data<double>();
+    case at::ScalarType::Half:
+      throw std::runtime_error("Half scalars are not implemented yet");
+    case at::ScalarType::Undefined:
+      throw std::runtime_error("Taking scalar value of an undefined tensor");
+    case at::ScalarType::NumOptions:
+      throw std::runtime_error("Got NumOptions as scalar type. Something went terribly wrong.");
+  }
+}
+
+template<>
+IntList tensor_as(const at::Tensor& t) {
+  if (t.type().scalarType() != at::ScalarType::Long)
+    throw std::runtime_error("Expected a LongTensor");
+  if (t.dim() != 1)
+    throw std::runtime_error("Expected a 1D LongTensor");
+  if (!t.is_contiguous())
+    throw std::runtime_error("Expected a contiguous LongTensor");
+  return IntList{t.data<int64_t>(), static_cast<size_t>(t.numel())};
+}
+
+template<>
+Scalar tensor_as(const at::Tensor& t) {
+  throw Scalar(t.view({}));
+}
+
+template<size_t N>
+std::array<bool, N> tensor_as(const at::Tensor& t) {
+  throw std::runtime_error("NYI");
+}
+
+
 std::unordered_map<std::string, operator_constructor> constructors = {
   ${constructors}
 };
